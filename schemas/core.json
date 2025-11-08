@@ -1,0 +1,43 @@
+{
+  "jobTitle": "",
+  "jobCode": "",
+  "jobOpenings": null,
+  "employmentType": "",
+  "workModel": "",
+  "workLocation": "",
+  "team": "",
+  "summary": "",
+  "impact": "",
+  "responsibilities": [],
+  "requirements": [],
+  "preferred": [],
+  "skills": {
+    "mustHave": [],
+    "niceToHave": []
+  },
+  "experience": {
+    "minimumYears": null,
+    "maximumYears": null,
+    "domains": [],
+    "leadership": "",
+    "tools": []
+  },
+  "education": [],
+  "certifications": [],
+  "salary": {
+    "currency": "",
+    "min": null,
+    "max": null,
+    "payPeriod": "",
+    "bonus": ""
+  },
+  "benefits": [],
+  "aboutCompany": "",
+  "culture": "",
+  "reportingLine": "",
+  "interviewProcess": "",
+  "successMetrics": [],
+  "onboarding": "",
+  "applicationProcess": "",
+  "notes": ""
+}

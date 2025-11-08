@@ -44,23 +44,10 @@ The server exposes:
 curl -X POST http://localhost:8000/profiles/generate \
   -H "Content-Type: application/json" \
   -d '{
-    "prompt": "Generate a detailed JSON response for a Java Backend Developer position with 3 years of experience based in Hyderabad.",
-    "schema": {
-      "jobTitle": "",
-      "jobCode": "",
-      "descriptionCaption": "",
-      "description": "",
-      "justificationJobDescription": "",
-      "requirement": "",
-      "aboutCompany": "",
-      "experience": [],
-      "salary": [],
-      "skills": [],
-      "benefits": []
-    }
+    "prompt": "Generate a detailed JSON response for a Java Backend Developer position with 3 years of experience based in Hyderabad."
   }'
 ```
 
-You can supply any schema object to match the desired JSON layout—for example `schemas/angular_extended_schema.json` for Angular roles.
+If you omit the `schema`, the service automatically applies the consolidated template stored at `schemas/core.json`. You can still supply your own schema object to tailor the shape of the response.
 
 Optional parameters: `model`, `temperature`, `max_tokens`, and `retries`.
