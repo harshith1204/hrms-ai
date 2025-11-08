@@ -59,6 +59,7 @@ class GenerationResult:
     raw: str
     model: str
 
+
 _BASE_DIR = Path(__file__).resolve().parent
 _DEFAULT_SCHEMA_PATH = _BASE_DIR / "schemas" / "core.json"
 
@@ -93,7 +94,7 @@ def build_system_prompt(schema: Optional[Dict[str, Any]]) -> str:
         "- Use concise, inclusive, and professional language suited for job descriptions.\n"
         "- Ground every detail strictly in the user's instructions. Do not infer employers, brands, tools, budgets, or numbers that were not supplied.\n"
         "- If a detail is missing:\n"
-        "  * For string fields, set the value to \"Not specified\".\n"
+        '  * For string fields, set the value to "Not specified".\n'
         "  * For numeric fields, set the value to null.\n"
         "  * For arrays or objects, leave them empty unless the user explicitly lists items.\n"
         "- Align tone and structure with scenario cues (e.g., urgent hiring, graduate roles, leadership positions, multi-location teams).\n"
@@ -153,7 +154,9 @@ def get_client() -> Groq:
     return _client
 
 
-def call_groq_api(client: Groq, request: GenerationRequest) -> Tuple[Dict[str, Any], str]:
+def call_groq_api(
+    client: Groq, request: GenerationRequest
+) -> Tuple[Dict[str, Any], str]:
     """Invoke Groq's chat completion API and parse the JSON response."""
     system_prompt = build_system_prompt(request.schema)
     messages = [
@@ -191,7 +194,9 @@ def call_groq_api(client: Groq, request: GenerationRequest) -> Tuple[Dict[str, A
                     timeout=request.timeout,
                 )
             else:
-                raise HRProfileCreatorError(f"Groq rejected the request: {exc}") from exc
+                raise HRProfileCreatorError(
+                    f"Groq rejected the request: {exc}"
+                ) from exc
         except GroqError as exc:
             raise HRProfileCreatorError(f"Groq API error: {exc}") from exc
         raw_content = completion.choices[0].message.content or ""

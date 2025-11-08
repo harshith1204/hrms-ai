@@ -77,12 +77,13 @@ async def health_check() -> Dict[str, Any]:
         "service": "HR Profile Generator",
         "version": "1.0.0",
         "groq_api": "unknown",
-        "free_tier_optimized": True
+        "free_tier_optimized": True,
     }
 
     try:
         # Test API key by checking if we can create a client
         from profile_creator import get_client
+
         client = get_client()
         health_status["groq_api"] = "configured"
     except Exception as e:
@@ -104,12 +105,16 @@ async def create_profile(payload: GenerateRequest) -> GenerateResponse:
             prompt=payload.prompt,
             schema=payload.schema,
             model=payload.model or DEFAULT_MODEL,
-            temperature=payload.temperature
-            if payload.temperature is not None
-            else DEFAULT_TEMPERATURE,
-            max_tokens=payload.max_tokens
-            if payload.max_tokens is not None
-            else DEFAULT_MAX_TOKENS,
+            temperature=(
+                payload.temperature
+                if payload.temperature is not None
+                else DEFAULT_TEMPERATURE
+            ),
+            max_tokens=(
+                payload.max_tokens
+                if payload.max_tokens is not None
+                else DEFAULT_MAX_TOKENS
+            ),
             retries=payload.retries if payload.retries is not None else 2,
             timeout=payload.timeout
             if payload.timeout is not None
