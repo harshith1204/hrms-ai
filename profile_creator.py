@@ -54,7 +54,7 @@ class GenerationResult:
 
 DEFAULT_MODEL = "openai/gpt-oss-20b"
 DEFAULT_TEMPERATURE = 0.3
-DEFAULT_MAX_TOKENS = 2048
+DEFAULT_MAX_TOKENS = 4096
 
 _BASE_DIR = Path(__file__).resolve().parent
 _DEFAULT_SCHEMA_PATH = _BASE_DIR / "schemas" / "core.json"
