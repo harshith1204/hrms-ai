@@ -16,6 +16,7 @@ Expose a FastAPI endpoint that transforms natural-language prompts into structur
 
 - Python 3.9+
 - A Groq Cloud account and API key (`GROQ_API_KEY`)
+- Optional: a `.env` file to store local environment variables
 
 ### Setup
 
@@ -23,7 +24,7 @@ Expose a FastAPI endpoint that transforms natural-language prompts into structur
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-export GROQ_API_KEY="your_api_key"
+echo "GROQ_API_KEY=your_api_key" > .env  # or export manually
 ```
 
 ### Run the API
