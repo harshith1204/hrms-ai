@@ -8,16 +8,59 @@ A Human Resource Management System powered by AI.
 - Automated HR workflows
 - Intelligent reporting and analytics
 
-## Getting Started
+## HR Profile Generator API
 
-1. Clone the repository
-2. Install dependencies
-3. Run the application
+Expose a FastAPI endpoint that transforms natural-language prompts into structured HR job profile JSON payloads using Groq Cloud models.
 
-## Contributing
+### Prerequisites
 
-Please read CONTRIBUTING.md for details on our code of conduct and the process for submitting pull requests.
+- Python 3.9+
+- A Groq Cloud account and API key (`GROQ_API_KEY`)
+- Optional: a `.env` file to store local environment variables
 
-## License
+### Setup
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+echo "GROQ_API_KEY=your_api_key" > .env  # or export manually
+```
+
+### Run the API
+
+```bash
+uvicorn app:app --reload
+```
+
+The server exposes:
+
+- `GET /health` – uptime probe
+- `POST /profiles/generate` – generate a profile
+
+### Example Request
+
+```bash
+curl -X POST http://localhost:8000/profiles/generate \
+  -H "Content-Type: application/json" \
+  -d '{
+    "prompt": "Generate a detailed JSON response for a Java Backend Developer position with 3 years of experience based in Hyderabad.",
+    "schema": {
+      "jobTitle": "",
+      "jobCode": "",
+      "descriptionCaption": "",
+      "description": "",
+      "justificationJobDescription": "",
+      "requirement": "",
+      "aboutCompany": "",
+      "experience": [],
+      "salary": [],
+      "skills": [],
+      "benefits": []
+    }
+  }'
+```
+
+You can supply any schema object to match the desired JSON layout—for example `schemas/angular_extended_schema.json` for Angular roles.
+
+Optional parameters: `model`, `temperature`, `max_tokens`, and `retries`.
