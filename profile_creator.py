@@ -23,6 +23,7 @@ from groq import (
     AuthenticationError,
     BadRequestError,
     GroqError,
+    Timeout,
 )
 
 load_dotenv()
@@ -35,6 +36,12 @@ class MissingAPIKeyError(HRProfileCreatorError):
     """Raised when GROQ_API_KEY is not provided."""
 
 
+DEFAULT_MODEL = "openai/gpt-oss-20b"
+DEFAULT_TEMPERATURE = 0.3
+DEFAULT_MAX_TOKENS = 2048  # Reduced for faster responses on free tiers
+DEFAULT_TIMEOUT = 25  # 25 seconds to stay under 30s free tier limits
+
+
 @dataclass
 class GenerationRequest:
     prompt: str
@@ -43,6 +50,7 @@ class GenerationRequest:
     temperature: float
     max_tokens: int
     retries: int = 2
+    timeout: float = DEFAULT_TIMEOUT
 
 
 @dataclass
@@ -50,11 +58,6 @@ class GenerationResult:
     profile: Dict[str, Any]
     raw: str
     model: str
-
-
-DEFAULT_MODEL = "openai/gpt-oss-20b"
-DEFAULT_TEMPERATURE = 0.3
-DEFAULT_MAX_TOKENS = 4096
 
 _BASE_DIR = Path(__file__).resolve().parent
 _DEFAULT_SCHEMA_PATH = _BASE_DIR / "schemas" / "core.json"
@@ -167,7 +170,12 @@ def call_groq_api(client: Groq, request: GenerationRequest) -> Tuple[Dict[str, A
                 temperature=request.temperature,
                 max_tokens=request.max_tokens,
                 response_format={"type": "json_object"},
+                timeout=request.timeout,
             )
+        except Timeout as exc:
+            raise HRProfileCreatorError(
+                f"Request timed out after {request.timeout} seconds. Try with a shorter prompt or lower max_tokens."
+            ) from exc
         except AuthenticationError as exc:
             raise MissingAPIKeyError(
                 "Groq authentication failed. Confirm that GROQ_API_KEY is present and valid."
@@ -180,6 +188,7 @@ def call_groq_api(client: Groq, request: GenerationRequest) -> Tuple[Dict[str, A
                     messages=messages,
                     temperature=request.temperature,
                     max_tokens=request.max_tokens,
+                    timeout=request.timeout,
                 )
             else:
                 raise HRProfileCreatorError(f"Groq rejected the request: {exc}") from exc
@@ -214,6 +223,7 @@ def generate_profile(
     temperature: float = DEFAULT_TEMPERATURE,
     max_tokens: int = DEFAULT_MAX_TOKENS,
     retries: int = 2,
+    timeout: float = DEFAULT_TIMEOUT,
     client: Optional[Groq] = None,
 ) -> GenerationResult:
     """Generate an HR profile using the specified instructions and optional schema."""
@@ -226,6 +236,7 @@ def generate_profile(
         temperature=temperature,
         max_tokens=max_tokens,
         retries=retries,
+        timeout=timeout,
     )
     profile, raw = call_groq_api(groq_client, request)
     return GenerationResult(profile=profile, raw=raw, model=model)

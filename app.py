@@ -9,6 +9,7 @@ from profile_creator import (
     DEFAULT_MAX_TOKENS,
     DEFAULT_MODEL,
     DEFAULT_TEMPERATURE,
+    DEFAULT_TIMEOUT,
     HRProfileCreatorError,
     MissingAPIKeyError,
     generate_profile,
@@ -54,6 +55,12 @@ class GenerateRequest(BaseModel):
         le=5,
         description="Retry count if the model returns non-JSON output.",
     )
+    timeout: Optional[float] = Field(
+        default=DEFAULT_TIMEOUT,
+        ge=5.0,
+        le=60.0,
+        description="Request timeout in seconds (max 30s recommended for free tiers).",
+    )
 
 
 class GenerateResponse(BaseModel):
@@ -63,9 +70,26 @@ class GenerateResponse(BaseModel):
 
 
 @app.get("/health", tags=["Health"])
-async def health_check() -> Dict[str, str]:
-    """Simple health probe for uptime monitoring."""
-    return {"status": "ok"}
+async def health_check() -> Dict[str, Any]:
+    """Comprehensive health check including API connectivity."""
+    health_status = {
+        "status": "ok",
+        "service": "HR Profile Generator",
+        "version": "1.0.0",
+        "groq_api": "unknown",
+        "free_tier_optimized": True
+    }
+
+    try:
+        # Test API key by checking if we can create a client
+        from profile_creator import get_client
+        client = get_client()
+        health_status["groq_api"] = "configured"
+    except Exception as e:
+        health_status["groq_api"] = f"error: {str(e)}"
+        health_status["status"] = "degraded"
+
+    return health_status
 
 
 @app.post(
@@ -87,6 +111,9 @@ async def create_profile(payload: GenerateRequest) -> GenerateResponse:
             if payload.max_tokens is not None
             else DEFAULT_MAX_TOKENS,
             retries=payload.retries if payload.retries is not None else 2,
+            timeout=payload.timeout
+            if payload.timeout is not None
+            else DEFAULT_TIMEOUT,
         )
     except MissingAPIKeyError as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc

@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: hrms-ai
+    runtime: docker
+    envVars:
+      - key: GROQ_API_KEY
+        sync: false  # Set this manually in Render dashboard
