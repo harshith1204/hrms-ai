@@ -54,7 +54,7 @@ class GenerationResult:
 
 DEFAULT_MODEL = "openai/gpt-oss-20b"
 DEFAULT_TEMPERATURE = 0.3
-DEFAULT_MAX_TOKENS = 4096
+DEFAULT_MAX_TOKENS = 2048
 
 _BASE_DIR = Path(__file__).resolve().parent
 _DEFAULT_SCHEMA_PATH = _BASE_DIR / "schemas" / "core.json"
@@ -88,8 +88,11 @@ def build_system_prompt(schema: Optional[Dict[str, Any]]) -> str:
         "Guidelines:\n"
         "- Mirror the schema exactly; keep every key present once and avoid extra fields.\n"
         "- Use concise, inclusive, and professional language suited for job descriptions.\n"
-        "- Ground every detail in the user's instructions or in neutral, industry-safe defaults. "
-        "If a detail is unspecified, write `Not specified` for strings or leave arrays empty instead of guessing.\n"
+        "- Ground every detail strictly in the user's instructions. Do not infer employers, brands, tools, budgets, or numbers that were not supplied.\n"
+        "- If a detail is missing:\n"
+        "  * For string fields, set the value to \"Not specified\".\n"
+        "  * For numeric fields, set the value to null.\n"
+        "  * For arrays or objects, leave them empty unless the user explicitly lists items.\n"
         "- Align tone and structure with scenario cues (e.g., urgent hiring, graduate roles, leadership positions, multi-location teams).\n"
         "- Respect all quantitative constraints such as budgets, years of experience, headcount, and locations.\n"
         "- When the prompt contains conflicting information, prioritise the latest explicit directive and keep the rest consistent.\n"
