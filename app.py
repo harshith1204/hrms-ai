@@ -15,7 +15,6 @@ from profile_creator import (
     generate_profile,
 )
 
-
 app = FastAPI(
     title="HR Profile Generator",
     version="1.0.0",
@@ -84,7 +83,7 @@ async def health_check() -> Dict[str, Any]:
         # Test API key by checking if we can create a client
         from profile_creator import get_client
 
-        client = get_client()
+        get_client()  # Test client creation to validate API key
         health_status["groq_api"] = "configured"
     except Exception as e:
         health_status["groq_api"] = f"error: {str(e)}"
@@ -116,9 +115,7 @@ async def create_profile(payload: GenerateRequest) -> GenerateResponse:
                 else DEFAULT_MAX_TOKENS
             ),
             retries=payload.retries if payload.retries is not None else 2,
-            timeout=payload.timeout
-            if payload.timeout is not None
-            else DEFAULT_TIMEOUT,
+            timeout=payload.timeout if payload.timeout is not None else DEFAULT_TIMEOUT,
         )
     except MissingAPIKeyError as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc

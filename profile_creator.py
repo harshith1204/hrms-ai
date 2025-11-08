@@ -18,15 +18,10 @@ from threading import Lock
 from typing import Any, Dict, Optional, Tuple
 
 from dotenv import load_dotenv
-from groq import (
-    Groq,
-    AuthenticationError,
-    BadRequestError,
-    GroqError,
-    Timeout,
-)
+from groq import AuthenticationError, BadRequestError, Groq, GroqError, Timeout
 
 load_dotenv()
+
 
 class HRProfileCreatorError(Exception):
     """Base exception for HR Profile Creator."""
