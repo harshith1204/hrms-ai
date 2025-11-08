@@ -17,7 +17,15 @@ from pathlib import Path
 from threading import Lock
 from typing import Any, Dict, Optional, Tuple
 
-from groq import Groq
+from dotenv import load_dotenv
+from groq import (
+    Groq,
+    AuthenticationError,
+    BadRequestError,
+    GroqError,
+)
+
+load_dotenv()
 
 class HRProfileCreatorError(Exception):
     """Base exception for HR Profile Creator."""
@@ -149,13 +157,31 @@ def call_groq_api(client: Groq, request: GenerationRequest) -> Tuple[Dict[str, A
 
     last_error: Optional[Exception] = None
     for attempt in range(request.retries + 1):
-        completion = client.chat.completions.create(
-            model=request.model,
-            messages=messages,
-            temperature=request.temperature,
-            max_tokens=request.max_tokens,
-            response_format={"type": "json_object"},
-        )
+        try:
+            completion = client.chat.completions.create(
+                model=request.model,
+                messages=messages,
+                temperature=request.temperature,
+                max_tokens=request.max_tokens,
+                response_format={"type": "json_object"},
+            )
+        except AuthenticationError as exc:
+            raise MissingAPIKeyError(
+                "Groq authentication failed. Confirm that GROQ_API_KEY is present and valid."
+            ) from exc
+        except BadRequestError as exc:
+            if "response_format" in str(exc):
+                # Retry without forcing JSON mode; model may not support the flag.
+                completion = client.chat.completions.create(
+                    model=request.model,
+                    messages=messages,
+                    temperature=request.temperature,
+                    max_tokens=request.max_tokens,
+                )
+            else:
+                raise HRProfileCreatorError(f"Groq rejected the request: {exc}") from exc
+        except GroqError as exc:
+            raise HRProfileCreatorError(f"Groq API error: {exc}") from exc
         raw_content = completion.choices[0].message.content or ""
         cleaned = strip_code_fences(raw_content)
         try:
