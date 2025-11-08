@@ -1,7 +1,7 @@
 {
   "jobTitle": "",
   "jobCode": "",
-  "jobOpenings": 1,
+  "jobOpenings": null,
   "employmentType": "",
   "workModel": "",
   "workLocation": "",
@@ -16,8 +16,8 @@
     "niceToHave": []
   },
   "experience": {
-    "minimumYears": "",
-    "maximumYears": "",
+    "minimumYears": null,
+    "maximumYears": null,
     "domains": [],
     "leadership": "",
     "tools": []
@@ -26,8 +26,8 @@
   "certifications": [],
   "salary": {
     "currency": "",
-    "min": "",
-    "max": "",
+    "min": null,
+    "max": null,
     "payPeriod": "",
     "bonus": ""
   },
