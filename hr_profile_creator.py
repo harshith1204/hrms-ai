@@ -11,16 +11,13 @@ from __future__ import annotations
 
 import json
 import os
+from copy import deepcopy
 from dataclasses import dataclass
-from functools import lru_cache
+from pathlib import Path
+from threading import Lock
 from typing import Any, Dict, Optional, Tuple
 
 from groq import Groq
-
-DEFAULT_MODEL = "llama3-8b-8192"
-DEFAULT_TEMPERATURE = 0.3
-DEFAULT_MAX_TOKENS = 2048
-
 
 class HRProfileCreatorError(Exception):
     """Base exception for HR Profile Creator."""
@@ -47,20 +44,56 @@ class GenerationResult:
     model: str
 
 
+DEFAULT_MODEL = "llama3-8b-8192"
+DEFAULT_TEMPERATURE = 0.3
+DEFAULT_MAX_TOKENS = 2048
+
+_BASE_DIR = Path(__file__).resolve().parent
+_DEFAULT_SCHEMA_PATH = _BASE_DIR / "schemas" / "core.json"
+
+
+def _load_default_schema(path: Path) -> Dict[str, Any]:
+    try:
+        with path.open("r", encoding="utf-8") as handle:
+            return json.load(handle)
+    except FileNotFoundError:
+        raise HRProfileCreatorError(
+            f"Default schema file not found at '{path}'. Ensure the consolidated schema exists."
+        )
+    except json.JSONDecodeError as exc:
+        raise HRProfileCreatorError(
+            f"Default schema at '{path}' contains invalid JSON."
+        ) from exc
+
+
+DEFAULT_SCHEMA = _load_default_schema(_DEFAULT_SCHEMA_PATH)
+
+_client_lock = Lock()
+_client: Optional[Groq] = None
+
+
 def build_system_prompt(schema: Optional[Dict[str, Any]]) -> str:
     """Create the system prompt guiding the LLM output."""
     base_prompt = (
-        "You are an assistant that generates HR job profile data. "
-        "Always respond with strictly valid JSON and nothing else. "
-        "Populate each field with professional, realistic, and engaging language suitable "
-        "for corporate job postings. Do not omit fields. Avoid commentary outside JSON."
+        "You are a senior HR business partner who drafts job profiles for recruiters and hiring managers.\n"
+        "Produce only valid JSON—no markdown, code fences, or prose outside the JSON object.\n"
+        "Guidelines:\n"
+        "- Mirror the schema exactly; keep every key present once and avoid extra fields.\n"
+        "- Use concise, inclusive, and professional language suited for job descriptions.\n"
+        "- Ground every detail in the user's instructions or in neutral, industry-safe defaults. "
+        "If a detail is unspecified, write `Not specified` for strings or leave arrays empty instead of guessing.\n"
+        "- Align tone and structure with scenario cues (e.g., urgent hiring, graduate roles, leadership positions, multi-location teams).\n"
+        "- Respect all quantitative constraints such as budgets, years of experience, headcount, and locations.\n"
+        "- When the prompt contains conflicting information, prioritise the latest explicit directive and keep the rest consistent.\n"
+        "- Highlight practical next steps (like interview process or onboarding expectations) only when the schema includes relevant fields.\n"
+        "- Never expose reasoning or instructions; return the final JSON object only."
     )
     if schema:
         schema_json = json.dumps(schema, ensure_ascii=False, indent=2)
         base_prompt += (
-            " Use exactly the following JSON structure and ensure the response includes every field:\n"
+            "\nUse this JSON template and fill every field thoughtfully:\n"
             f"{schema_json}\n"
-            "Replace every placeholder with appropriate content inspired by the user's request."
+            "Replace placeholders with content that follows the guidelines above."
         )
     return base_prompt
 
@@ -94,10 +127,16 @@ def ensure_api_key() -> str:
     return api_key
 
 
-@lru_cache(maxsize=1)
 def get_client() -> Groq:
-    """Return a cached Groq client instance."""
-    return Groq(api_key=ensure_api_key())
+    """Return a Groq client instance, creating one if necessary."""
+    global _client
+    if _client is not None:
+        return _client
+
+    with _client_lock:
+        if _client is None:
+            _client = Groq(api_key=ensure_api_key())
+    return _client
 
 
 def call_groq_api(client: Groq, request: GenerationRequest) -> Tuple[Dict[str, Any], str]:
@@ -150,9 +189,10 @@ def generate_profile(
 ) -> GenerationResult:
     """Generate an HR profile using the specified instructions and optional schema."""
     groq_client = client or get_client()
+    schema_payload = deepcopy(schema if schema is not None else DEFAULT_SCHEMA)
     request = GenerationRequest(
         prompt=prompt,
-        schema=schema,
+        schema=schema_payload,
         model=model,
         temperature=temperature,
         max_tokens=max_tokens,
